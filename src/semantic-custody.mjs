@@ -4,8 +4,8 @@ import { dirname, join, resolve, sep } from "node:path";
 import { dataArtifactFiles } from "@red-cup-engineering/eavt-engineering-services-section/data-artifact-listing";
 import { createImmutableContentCustody } from "@red-cup-engineering/immutable-content-custody-service";
 import { admitJsonSemanticContent, EMPTY_WITNESS_ROOT, identifyJsonSemanticContent } from "@red-cup-engineering/computer-content-address-engineering-services-section/semantic-content-identity";
-import { seavt } from "@red-cup-engineering/witness-journal-entry-service";
-import { appendSeavt, readSeavtAtPath } from "@red-cup-engineering/witness-journal-log-service";
+import { seavt } from "@red-cup-engineering/witness-journal-entry-services-section";
+import { appendSeavt, readSeavtAtPath } from "@red-cup-engineering/witness-journal-log-services-section";
 
 const OBJECT_KIND = "google-drive.semantic-record", FEED = "google-drive.semantic-records";
 function feedFiles(root) {
