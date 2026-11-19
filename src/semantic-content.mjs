@@ -7,4 +7,4 @@ export function identifyGoogleDriveTerm(value, objectKind) {
 
 export const googleDriveTermId = (value, objectKind) => identifyGoogleDriveTerm(value, objectKind).token;
 export const googleDriveTermBytes = (value, objectKind) => identifyGoogleDriveTerm(value, objectKind).bytes;
-export const admitGoogleDriveTerm = (bytes, objectKind, token) => admitJsonSemanticContent({ bytes, token, objectKind }).value;
+export const validateGoogleDriveTerm = (bytes, objectKind, token) => admitJsonSemanticContent({ bytes, token, objectKind }).value;
