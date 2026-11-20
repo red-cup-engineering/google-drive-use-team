@@ -16,7 +16,7 @@ function objectPath(root, key) {
   if (path !== base && !path.startsWith(`${base}${sep}`)) throw new Error("immutable content key escapes Google Drive custody");
   return path;
 }
-function storage(root) {
+function custody(root) {
   const dataRoot = join(root, "data", "semantic-content");
   return createImmutableContentCustody({ r2: Object.freeze({
     async putCurrent(key, { body, mediaType = "application/octet-stream" }) {
@@ -44,17 +44,17 @@ function tokenFromSurface(surface) {
 const categorySurface = (category) => tokenSurface("category", identify(category).token);
 export async function recordGoogleDriveSemanticContent(root, category, record, recordedAt = new Date().toISOString()) {
   const addressed = identify(record);
-  await storage(root).put({ ni: addressed.token, bytes: addressed.bytes, mediaType: "application/vnd.561-group.semantic-content+rmn" });
+  await custody(root).put({ ni: addressed.token, bytes: addressed.bytes, mediaType: "application/vnd.561-group.semantic-content+rmn" });
   const appended = appendSeavt(root, FEED, [seavt(categorySurface(category), "google-drive-record:member", tokenSurface("record", addressed.token), recordedAt)], recordedAt);
   return Object.freeze({ semanticId: addressed.token, reference: Object.freeze({ ni: addressed.token }), appended: appended.appended, record });
 }
 export async function queryGoogleDriveSemanticContent(category, { root } = {}) {
   const entity = categorySurface(category), rows = feedFiles(root).flatMap(readSeavtAtPath).filter((row) => row.e === entity && row.a === "google-drive-record:member");
-  const content = storage(root), seen = new Set(), records = [];
+  const content = custody(root), seen = new Set(), records = [];
   for (const row of rows) {
     const token = tokenFromSurface(row.v); if (seen.has(token)) continue; seen.add(token);
-    const kept = await content.get(token); if (!kept) throw new Error(`Google Drive semantic content ${token} is indexed but absent from custody`);
-    records.push(admitJsonSemanticContent({ bytes: kept.bytes, token, objectKind: OBJECT_KIND }).value);
+    const retained = await content.get(token); if (!retained) throw new Error(`Google Drive semantic content ${token} is indexed but absent from custody`);
+    records.push(admitJsonSemanticContent({ bytes: retained.bytes, token, objectKind: OBJECT_KIND }).value);
   }
   return records;
 }

@@ -169,7 +169,7 @@ async function readBounded(response, maximumBytes) {
   return Buffer.concat(chunks, length);
 }
 
-function typedRejection(source, offer, capability, code, detail, evidence, now, observations) {
+function typedRefusal(source, offer, capability, code, detail, evidence, now, observations) {
   const object = contentRecord({
     type: "GoogleDriveUseRefusal",
     code,
@@ -222,7 +222,7 @@ async function invoke(activity, now, options) {
     return contentRecord({ type: "Accept", actor: ACTOR, target: activity.actor, inReplyTo: activity.id, object: product, recordedAt: now });
   }
   if (!finiteString(options.accessToken, 16384) || options.configuredCredentialGrantId !== request.credentialGrantId) {
-    return typedRejection(activity, offer, capability, "credential-grant-unavailable-or-mismatched",
+    return typedRefusal(activity, offer, capability, "credential-grant-unavailable-or-mismatched",
       "the configured credential and non-secret grant identity did not match the exact invocation",
       { networkRequests: 0 }, now, observations(0));
   }
@@ -261,18 +261,18 @@ async function invoke(activity, now, options) {
       ]);
       const result = await providerJson(`${DRIVE_UPLOAD_API}/files?uploadType=multipart&supportsAllDrives=true&fields=${encodeURIComponent(FILE_FIELDS)}`,
         { method: "POST", headers: { "Content-Type": `multipart/related; boundary=${boundary}` }, body });
-      if (result.refusal) return typedRejection(activity, offer, capability, "google-drive-provider-refused",
+      if (result.refusal) return typedRefusal(activity, offer, capability, "google-drive-provider-refused",
         "Google Drive did not accept the fixed store operation", result.refusal, now, observations(providerRequests));
       assert(finiteString(result.value?.id, 512), "provider store result lacks a file id");
       providerResult = { operation: "store", file: normalizeFile(result.value) };
     } else if (selected.operation === "retrieve") {
       const fileId = encodeURIComponent(request.input.fileId);
       const metadata = await providerJson(`${DRIVE_API}/files/${fileId}?supportsAllDrives=true&fields=${encodeURIComponent(FILE_FIELDS)}`);
-      if (metadata.refusal) return typedRejection(activity, offer, capability, "google-drive-provider-refused",
+      if (metadata.refusal) return typedRefusal(activity, offer, capability, "google-drive-provider-refused",
         "Google Drive did not accept the fixed retrieve metadata operation", metadata.refusal, now, observations(providerRequests));
       const response = await boundedFetch(`${DRIVE_API}/files/${fileId}?alt=media&supportsAllDrives=true`);
       const bytes = await readBounded(response, request.maximumBytes);
-      if (!response.ok) return typedRejection(activity, offer, capability, "google-drive-provider-refused",
+      if (!response.ok) return typedRefusal(activity, offer, capability, "google-drive-provider-refused",
         "Google Drive did not accept the fixed retrieve media operation",
         { status: response.status, statusText: response.statusText, bodyDigest: `sha256:${createHash("sha256").update(bytes).digest("hex")}` },
         now, observations(providerRequests));
@@ -283,7 +283,7 @@ async function invoke(activity, now, options) {
         fields: `nextPageToken,files(${FILE_FIELDS})`, supportsAllDrives: "true", includeItemsFromAllDrives: "true" });
       if (request.input.query) params.set("q", request.input.query);
       const result = await providerJson(`${DRIVE_API}/files?${params}`);
-      if (result.refusal) return typedRejection(activity, offer, capability, "google-drive-provider-refused",
+      if (result.refusal) return typedRefusal(activity, offer, capability, "google-drive-provider-refused",
         "Google Drive did not accept the fixed list operation", result.refusal, now, observations(providerRequests));
       assert(Array.isArray(result.value?.files), "provider list result lacks files");
       providerResult = { operation: "list", files: result.value.files.map(normalizeFile), nextPageAvailable: finiteString(result.value.nextPageToken, 2048) };
@@ -306,7 +306,7 @@ async function invoke(activity, now, options) {
     });
     return contentRecord({ type: "Accept", actor: ACTOR, target: activity.actor, inReplyTo: activity.id, object: product, recordedAt: now });
   } catch (error) {
-    return typedRejection(activity, offer, capability,
+    return typedRefusal(activity, offer, capability,
       error.code === "provider-timeout" || error.name === "AbortError" ? "google-drive-provider-timeout" : "google-drive-use-failed",
       error.code === "provider-timeout" || error.name === "AbortError" ? "the fixed provider use exceeded its wall bound" : error.message,
       { networkRequests: providerRequests }, now, observations(providerRequests));
