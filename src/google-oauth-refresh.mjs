@@ -1,4 +1,4 @@
-import { createHash } from "node:crypto";
+import { sha256Hex } from "@red-cup-engineering/semiotic-content-address-system";
 
 const TOKEN_ENDPOINT = "https://oauth2.googleapis.com/token";
 
@@ -46,7 +46,7 @@ export async function obtainGoogleAccessToken({ accessToken, clientId, clientSec
   }
 
   const bytes = await responseBytes(response);
-  const bodyDigest = `sha256:${createHash("sha256").update(bytes).digest("hex")}`;
+  const bodyDigest = `sha256:${sha256Hex(bytes)}`;
   if (!response.ok) {
     throw new GoogleOAuthRefreshError("Google OAuth did not issue an access token", {
       tokenEndpointRequests: 1, status: response.status, statusText: response.statusText,

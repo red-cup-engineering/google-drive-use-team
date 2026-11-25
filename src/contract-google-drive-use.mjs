@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
-import { createHash, randomBytes } from "node:crypto";
+import { sha256Hex } from "@red-cup-engineering/semiotic-content-address-system";
+import { randomBytes } from "node:crypto";
 import { resolve } from "node:path";
 import {
   activityObject,
@@ -240,10 +241,10 @@ async function invoke(activity, now, options) {
     const response = await boundedFetch(url, init);
     const bytes = await readBounded(response, request.maximumBytes);
     if (!response.ok) return { refusal: { status: response.status, statusText: response.statusText,
-      bodyDigest: `sha256:${createHash("sha256").update(bytes).digest("hex")}` } };
+      bodyDigest: `sha256:${sha256Hex(bytes)}` } };
     try { return { value: JSON.parse(bytes.toString("utf8")) }; }
     catch { return { refusal: { status: response.status, statusText: response.statusText, code: "provider-json-invalid",
-      bodyDigest: `sha256:${createHash("sha256").update(bytes).digest("hex")}` } }; }
+      bodyDigest: `sha256:${sha256Hex(bytes)}` } }; }
   }
   try {
     let providerResult;
@@ -274,10 +275,10 @@ async function invoke(activity, now, options) {
       const bytes = await readBounded(response, request.maximumBytes);
       if (!response.ok) return typedRefusal(activity, offer, capability, "google-drive-provider-refused",
         "Google Drive did not accept the fixed retrieve media operation",
-        { status: response.status, statusText: response.statusText, bodyDigest: `sha256:${createHash("sha256").update(bytes).digest("hex")}` },
+        { status: response.status, statusText: response.statusText, bodyDigest: `sha256:${sha256Hex(bytes)}` },
         now, observations(providerRequests));
       providerResult = { operation: "retrieve", file: normalizeFile(metadata.value), contentBase64: bytes.toString("base64"),
-        contentDigest: `sha256:${createHash("sha256").update(bytes).digest("hex")}`, byteLength: bytes.length };
+        contentDigest: `sha256:${sha256Hex(bytes)}`, byteLength: bytes.length };
     } else {
       const params = new URLSearchParams({ pageSize: String(request.input.pageSize ?? 25),
         fields: `nextPageToken,files(${FILE_FIELDS})`, supportsAllDrives: "true", includeItemsFromAllDrives: "true" });
