@@ -6,9 +6,9 @@ import { resolve } from "node:path";
 import {
   activityObject,
   assertContentRecord,
-  canonical,
+  recordText,
   contentRecord,
-  digest,
+  recordId,
   resourceObservations,
 } from "./records.mjs";
 import { queryGoogleDriveSemanticContent, recordGoogleDriveSemanticContent } from "./semantic-custody.mjs";
@@ -112,7 +112,7 @@ function solicit(activity, now) {
     type: "GoogleDriveUseOffer",
     providerContract: "google-drive-v3-bounded-use",
     request,
-    requestDigest: digest(request),
+    requestDigest: recordId(request),
     fixedOperation: selected.operation,
     maximumProviderRequests: selected.maximumProviderRequests,
     credentialGrantId: request.credentialGrantId,
@@ -129,11 +129,11 @@ function validateCapability(capability, offer, customer, now, usedCapabilityIds)
   assert(capability.type === "PurposeBoundCapability", "PurposeBoundCapability is required");
   assert(capability.issuer === customer && capability.holder === ACTOR && capability.invocationTarget === ACTOR,
     "capability parties mismatch");
-  assert(capability.requestDigest === offer.object.requestDigest && capability.providerOfferDigest === digest(offer),
+  assert(capability.requestDigest === offer.object.requestDigest && capability.providerOfferDigest === recordId(offer),
     "capability binding mismatch");
   assert(capability.credentialGrantId === offer.object.credentialGrantId, "credential grant binding mismatch");
   assert(capability.singleUse === true && Date.parse(capability.expiresAt) >= Date.parse(now), "capability is expired or reusable");
-  assert(canonical(capability.effects) === canonical(offer.object.effects), "capability effects mismatch");
+  assert(recordText(capability.effects) === recordText(offer.object.effects), "capability effects mismatch");
   assert(!usedCapabilityIds.has(capability.id), "capability replay");
 }
 
@@ -193,9 +193,9 @@ async function invoke(activity, now, options) {
   assert(offer.type === "Offer" && offer.actor === ACTOR && offer.target === activity.actor, "exact provider offer is required");
   const request = offer.object?.request;
   const selected = validateRequest(request);
-  assert(offer.object.requestDigest === digest(request) && offer.object.fixedOperation === selected.operation,
+  assert(offer.object.requestDigest === recordId(request) && offer.object.fixedOperation === selected.operation,
     "offer request or fixed operation drifted");
-  assert(canonical(offer.object.effects) === canonical(effectsFor(request)), "offer effects drifted");
+  assert(recordText(offer.object.effects) === recordText(effectsFor(request)), "offer effects drifted");
   const capability = activity.capability ?? activity.object?.capability;
   validateCapability(capability, offer, activity.actor, now, options.usedCapabilityIds);
   const started = process.hrtime.bigint();
